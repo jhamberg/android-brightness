@@ -22,9 +22,11 @@ public class ChargingBrightnessService extends Service {
     private final float POWER_SAVING_LEVEL = 0.15f;
     private final int BRIGHTNESS_GUESS = 128;
     private final int BRIGHTNESS_MAX = 255;
+    private final int TIMEOUT_GUESS = 15000;
 
     private int previousBrightness;
     private int previousMode;
+    private int previousTimeout;
     private boolean plugged = false;
 
     //region Service implementation
@@ -81,10 +83,13 @@ public class ChargingBrightnessService extends Service {
                 // Snapshot brightness settings
                 previousBrightness = getBrightnessLevel();
                 previousMode = getBrightnessMode();
+                previousTimeout = getScreenTimeout();
                 plugged = true;
+
 
                 setBrightnessMode(MANUAL);
                 setBrightnessLevel(BRIGHTNESS_MAX);
+                setScreenTimeout(Integer.MAX_VALUE);
 
             } else if (plugged
                     && batteryStatus == BatteryManager.BATTERY_STATUS_DISCHARGING) {
@@ -98,6 +103,9 @@ public class ChargingBrightnessService extends Service {
                 if (getBrightnessMode() != previousMode) {
                     setBrightnessMode(previousMode);
                 }
+                if(getScreenTimeout() != previousTimeout){
+                    setScreenTimeout(previousTimeout);
+                }
             }
         }
     };
@@ -109,6 +117,10 @@ public class ChargingBrightnessService extends Service {
 
     private void setBrightnessLevel(int level) {
         Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, level);
+    }
+
+    private void setScreenTimeout(int msec) {
+        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, msec);
     }
 
     private int getBrightnessMode() {
@@ -126,6 +138,15 @@ public class ChargingBrightnessService extends Service {
         } catch (Settings.SettingNotFoundException e) {
             Log.d("error", "Failed reading brightness level, defaulting to " + BRIGHTNESS_GUESS);
             return BRIGHTNESS_GUESS;
+        }
+    }
+
+    private int getScreenTimeout() {
+        try {
+            return Settings.System.getInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT);
+        } catch (Settings.SettingNotFoundException e) {
+            Log.d("error", "Failed reading brightness level, defaulting to " + TIMEOUT_GUESS);
+            return TIMEOUT_GUESS;
         }
     }
     //endregion
