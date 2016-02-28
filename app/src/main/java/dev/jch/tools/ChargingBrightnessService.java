@@ -34,6 +34,8 @@ public class ChargingBrightnessService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         previousMode = getBrightnessMode();
         previousBrightness = getBrightnessLevel();
+        previousTimeout = getScreenTimeout();
+        
         IntentFilter filter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
         registerReceiver(chargingReceiver, filter);
         return Service.START_STICKY;
@@ -51,6 +53,13 @@ public class ChargingBrightnessService extends Service {
 
     @Override
     public void onDestroy() {
+        Toast.makeText(this, "Brightness service terminated!", Toast.LENGTH_LONG).show();
+
+        // Restore default values in case device was plugged
+        setBrightnessMode(previousMode);
+        setBrightnessLevel(previousBrightness);
+        setScreenTimeout(previousTimeout);
+
         unregisterReceiver(chargingReceiver);
     }
     //endregion
